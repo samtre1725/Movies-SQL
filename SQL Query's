@@ -1,0 +1,61 @@
+--Window Functions: Calculate the average rating for each genre, along with the rank of each movie within its genre based on its rating.--
+
+SELECT 
+    title, 
+    genre, 
+    rating,
+    AVG(rating) OVER (PARTITION BY genre) AS average_rating,
+    RANK() OVER (PARTITION BY genre ORDER BY rating DESC) AS genre_rank
+FROM movies;
+ 
+
+
+
+--Subqueries: Find the movies with ratings higher than the average rating of their respective genres.
+
+SELECT title, genre, rating
+FROM movies
+WHERE rating > (SELECT AVG(rating) FROM movies m2 WHERE m2.genre = movies.genre);
+
+
+
+--CTE (Common Table Expressions): Calculate the cumulative sum of ratings for each genre."
+
+WITH CumulativeRatings AS (
+    SELECT 
+        title, 
+        genre, 
+        rating,
+        SUM(rating) OVER (PARTITION BY genre ORDER BY title) AS cumulative_rating
+    FROM movies
+)
+SELECT title, genre, rating, cumulative_rating
+FROM CumulativeRatings;
+
+
+
+--Pivoting: Display the average rating for each genre as columns instead of rows."
+
+
+SELECT 
+    AVG(CASE WHEN genre = 'Action' THEN rating END) AS Action,
+    AVG(CASE WHEN genre = 'Comedy' THEN rating END) AS Comedy,
+    AVG(CASE WHEN genre = 'Drama' THEN rating END) AS Drama
+FROM movies;
+
+
+
+
+--Recursive Queries: Find all subgenres of a given genre."
+
+WITH RECURSIVE (Subgenres) AS (
+    SELECT genre, parent_genre
+    FROM genre_hierarchy
+    WHERE parent_genre = 'Action'
+    UNION ALL
+    SELECT gh.genre, gh.parent_genre
+    FROM genre_hierarchy gh
+    JOIN Subgenres s ON gh.parent_genre = s.genre
+)
+SELECT DISTINCT genre
+FROM Subgenres;
